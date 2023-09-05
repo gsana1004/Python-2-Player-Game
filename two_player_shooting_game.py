@@ -22,8 +22,8 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Competitive Two-Player Shooting Game")
 
 # Players
-player1_x = WIDTH // 4 - PLAYER_SIZE // 2
-player2_x = 3 * WIDTH // 4 - PLAYER_SIZE // 2
+player1_x = 3 * WIDTH // 4 - PLAYER_SIZE // 2
+player2_x = WIDTH // 4 - PLAYER_SIZE // 2
 player_y = HEIGHT - 2 * PLAYER_SIZE
 player_speed = 5
 player1 = pygame.Rect(player1_x, player_y, PLAYER_SIZE, PLAYER_SIZE)
@@ -75,10 +75,10 @@ while not game_over:
 
     keys = pygame.key.get_pressed()
 
-    # Player 1 controls (arrow keys to move, space to shoot)
-    if keys[pygame.K_LEFT] and player1.x > 0:
+    # Player 1 controls (AD to move, Enter/Return to shoot)
+    if keys[pygame.K_a] and player1.x > WIDTH // 2:
         player1.x -= player_speed
-    if keys[pygame.K_RIGHT] and player1.x < WIDTH // 2 - PLAYER_SIZE:
+    if keys[pygame.K_d] and player1.x < WIDTH - PLAYER_SIZE:
         player1.x += player_speed
 
     if keys[pygame.K_SPACE]:
@@ -86,10 +86,10 @@ while not game_over:
             bullet = pygame.Rect(player1.x + PLAYER_SIZE // 2 - BULLET_SIZE // 2, player1.y, BULLET_SIZE, BULLET_SIZE)
             bullets1.append(bullet)
 
-    # Player 2 controls (WASD to move, Enter/Return to shoot)
-    if keys[pygame.K_a] and player2.x > WIDTH // 2:
+    # Player 2 controls (arrow keys to move, space to shoot)
+    if keys[pygame.K_LEFT] and player2.x > 0:
         player2.x -= player_speed
-    if keys[pygame.K_d] and player2.x < WIDTH - PLAYER_SIZE:
+    if keys[pygame.K_RIGHT] and player2.x < WIDTH // 2 - PLAYER_SIZE:
         player2.x += player_speed
 
     if keys[pygame.K_RETURN]:
@@ -228,8 +228,10 @@ while not game_over:
     # Check for game over
     if lives1 <= 0 or lives2 <= 0:
         if score1 > score2:
+            score1 += 1
             winner = "Player 1 Wins!"
         elif score2 > score1:
+            score2 += 2
             winner = "Player 2 Wins!"
         else:
             winner = "It's a Tie!"
