@@ -6,7 +6,7 @@ import random
 pygame.init()
 
 # Constants
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 1790, 1100
 PLAYER_SIZE = 50
 BULLET_SIZE = 10
 ENEMY_SIZE = 30
@@ -22,6 +22,15 @@ ENEMY_SPAWN_INTERVAL = 1000
 POWERUP_SPAWN_INTERVAL = 5000
 POWERUP_FIRE_RATE = "fire_rate"
 POWERUP_SHIELD = "shield"
+
+# Overheating Bar Constants
+OVERHEAT_MAX = 200  # Maximum overheating value
+OVERHEAT_COOLDOWN = 3000  # Cooldown duration in milliseconds (3 seconds)
+OVERHEAT_DECREMENT = 10  # Rate at which overheating decreases per frame
+
+# Player Health Constants
+PLAYER_MAX_HEALTH = 100
+HEALTH_REGEN_RATE = 0.5  # Health regeneration rate per second
 
 # Create a window
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -42,8 +51,13 @@ player1_bullets = []
 player1_fire_rate = 1  # Bullet firing rate multiplier
 player1_shielded = False
 player1_shield_end_time = 0
-player1_lives = 3
+player1_health = PLAYER_MAX_HEALTH
 player1_score = 0
+player1_overheat = 0
+player1_overheat_cooldown = 0
+player1_can_shoot = True  # Indicates if player 1 can shoot
+player1_last_shot_time = 0
+fire_rate_delay = 500
 
 # Player 2
 player2_img = pygame.image.load("/Users/gabrielsanandaji/pythongame/png-clipart-pokemon-character-illustration-asteroids-outpost-defender-miner-cube-pro-sprite-video-game-space-craft-game-symmetry.png")
@@ -57,13 +71,16 @@ player2_bullets = []
 player2_fire_rate = 1  # Bullet firing rate multiplier
 player2_shielded = False
 player2_shield_end_time = 0
-player2_lives = 3
+player2_health = PLAYER_MAX_HEALTH
 player2_score = 0
+player2_overheat = 0
+player2_overheat_cooldown = 0
+player2_can_shoot = True  # Indicates if player 2 can shoot
+player2_last_shot_time = 0
 
 # Enemies
 enemy_img = pygame.image.load("/Users/gabrielsanandaji/pythongame/png-transparent-digital-painting-decapoda-bird-exotic-pet-enemy-spaceship-spacecraft-pet-video-game.png")
 enemy_img = pygame.transform.scale(enemy_img, (ENEMY_SIZE, ENEMY_SIZE))
-
 enemies = []
 
 # Power-ups
@@ -75,10 +92,15 @@ last_enemy_spawn_time = 0
 last_powerup_spawn_time = 0
 game_over = False
 
+# Time tracking for health regeneration
+health_regeneration_timer = pygame.time.get_ticks()
+
+# Function to draw text on the screen
 def draw_text(text, x, y, color):
     text_surface = font.render(text, True, color)
     screen.blit(text_surface, (x, y))
 
+# Function to reset player position and status
 def reset_player(player):
     player.x = WIDTH // 4 if player == player1 else 3 * WIDTH // 4
     player.y = HEIGHT - 2 * PLAYER_SIZE
@@ -117,11 +139,16 @@ while not game_over:
         player1_speed_y = 0
 
     if keys[pygame.K_SPACE]:
-        bullet = pygame.Rect(
-            player1.x + PLAYER_SIZE // 2 - BULLET_SIZE // 2,
-            player1.y,
-            BULLET_SIZE, BULLET_SIZE)
-        player1_bullets.append(bullet)
+        if keys[pygame.K_SPACE] and player1_can_shoot:
+            current_time = pygame.time.get_ticks()
+            if current_time - player1_last_shot_time > fire_rate_delay:
+                bullet = pygame.Rect(
+                    player1.x + PLAYER_SIZE // 2 - BULLET_SIZE // 2,
+                    player1.y,
+                    BULLET_SIZE, BULLET_SIZE)
+                player1_bullets.append(bullet)
+                player1_last_shot_time = current_time
+                player1_overheat += 10
 
     # Player 2 controls
     if keys[pygame.K_LEFT]:
@@ -139,11 +166,16 @@ while not game_over:
         player2_speed_y = 0
 
     if keys[pygame.K_RETURN]:
-        bullet = pygame.Rect(
-            player2.x + PLAYER_SIZE // 2 - BULLET_SIZE // 2,
-            player2.y,
-            BULLET_SIZE, BULLET_SIZE)
-        player2_bullets.append(bullet)
+        if keys[pygame.K_RETURN] and player2_can_shoot:
+            current_time = pygame.time.get_ticks()
+            if current_time - player2_last_shot_time > fire_rate_delay:
+                bullet = pygame.Rect(
+                    player2.x + PLAYER_SIZE // 2 - BULLET_SIZE // 2,
+                    player2.y,
+                    BULLET_SIZE, BULLET_SIZE)
+                player2_bullets.append(bullet)
+                player2_last_shot_time = current_time
+                player2_overheat += 10
 
     # Player 1 movement
     player1.x += player1_speed_x
@@ -170,16 +202,38 @@ while not game_over:
     current_time = pygame.time.get_ticks()
     if current_time - last_enemy_spawn_time > ENEMY_SPAWN_INTERVAL:
         enemy_x = random.randint(0, WIDTH - ENEMY_SIZE)
-        enemy_y = 0
+        enemy_y = -ENEMY_SIZE  # Start enemies above the screen
         enemy = enemy_img.get_rect()
         enemy.x = enemy_x
         enemy.y = enemy_y
         enemies.append(enemy)
         last_enemy_spawn_time = current_time
+    # Cooldown for player 1
+    current_time = pygame.time.get_ticks()
+    if player1_overheat >= OVERHEAT_MAX:
+        player1_can_shoot = False
+        if current_time >= player1_overheat_cooldown:
+            player1_can_shoot = True
+            player1_overheat_cooldown = current_time + OVERHEAT_COOLDOWN  # Set cooldown end time
+    else:
+        player1_can_shoot = True
 
-    # Move and update enemies
-    for enemy in enemies:
-        enemy.y += ENEMY_SPEED
+    # Cooldown for player 2
+    if player2_overheat >= OVERHEAT_MAX:
+        player2_can_shoot = False
+        if current_time >= player2_overheat_cooldown:
+            player2_can_shoot = True
+            player2_overheat_cooldown = current_time + OVERHEAT_COOLDOWN  # Set cooldown end time
+    else:
+        player2_can_shoot = True
+
+    # Decrease overheating for player 1
+    if not player1_can_shoot and player1_overheat > 0:
+        player1_overheat -= OVERHEAT_DECREMENT
+
+    # Decrease overheating for player 2
+    if not player2_can_shoot and player2_overheat > 0:
+        player2_overheat -= OVERHEAT_DECREMENT
 
     # Check for collisions between bullets and enemies
     for bullet in player1_bullets:
@@ -200,14 +254,18 @@ while not game_over:
     for enemy in enemies:
         if player1.colliderect(enemy):
             if not player1_shielded:
-                player1_lives -= 1
-                reset_player(player1)
+                player1_health -= 10  # Deduct 10% health
+                if player1_health <= 0:
+                    reset_player(player1)
+                    player1_health = PLAYER_MAX_HEALTH  # Reset health when it reaches 0
             enemies.remove(enemy)
 
         if player2.colliderect(enemy):
             if not player2_shielded:
-                player2_lives -= 1
-                reset_player(player2)
+                player2_health -= 10  # Deduct 10% health
+                if player2_health <= 0:
+                    reset_player(player2)
+                    player2_health = PLAYER_MAX_HEALTH  # Reset health when it reaches 0
             enemies.remove(enemy)
 
     # Check for collisions between players and power-ups
@@ -238,15 +296,21 @@ while not game_over:
     if player2_fire_rate == 2 and current_time - player2_shield_end_time > 0:
         player2_fire_rate = 1
 
-    # Check for game over
-    if player1_lives <= 0 or player2_lives <= 0:
-        game_over = True
+    # Health regeneration
+    if current_time - health_regeneration_timer >= 1000:  # 1000 milliseconds = 1 second
+        player1_health = min(PLAYER_MAX_HEALTH, player1_health + (HEALTH_REGEN_RATE * 1))
+        player2_health = min(PLAYER_MAX_HEALTH, player2_health + (HEALTH_REGEN_RATE * 1))
+        health_regeneration_timer = current_time
 
     # Draw everything
     screen.fill((0, 0, 0))
 
     screen.blit(player1_img, player1)
     screen.blit(player2_img, player2)
+
+    # Draw overheating bars
+    pygame.draw.rect(screen, WHITE, (10, 10, player1_overheat, 20))
+    pygame.draw.rect(screen, WHITE, (WIDTH - 10 - player2_overheat, 10, player2_overheat, 20))
 
     for bullet in player1_bullets:
         pygame.draw.rect(screen, RED, bullet)
@@ -260,17 +324,27 @@ while not game_over:
     for (powerup, _) in powerups:
         pygame.draw.rect(screen, GREEN, powerup)
 
-    draw_text(f"Player 1 Lives: {player1_lives}", 10, 10, WHITE)
-    draw_text(f"Player 1 Score: {player1_score}", 10, 50, WHITE)
-    draw_text(f"Player 2 Lives: {player2_lives}", WIDTH - 200, 10, WHITE)
-    draw_text(f"Player 2 Score: {player2_score}", WIDTH - 200, 50, WHITE)
+    draw_text(f"Player 1 Health: {int(player1_health)}%", 10, 50, WHITE)
+    draw_text(f"Player 1 Score: {player1_score}", 10, 90, WHITE)
+    draw_text(f"Player 2 Health: {int(player2_health)}%", WIDTH - 200, 50, WHITE)
+    draw_text(f"Player 2 Score: {player2_score}", WIDTH - 200, 90, WHITE)
+
+    # Display overheating warning for player 1
+    if not player1_can_shoot:
+        if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
+            draw_text("OVERHEATING", 10, 120, RED)
+
+    # Display overheating warning for player 2
+    if not player2_can_shoot:
+        if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
+            draw_text("OVERHEATING", WIDTH - 200, 120, RED)
 
     pygame.display.flip()
 
     clock.tick(60)
 
 # Game over screen
-while True:
+while game_over:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -278,9 +352,9 @@ while True:
 
     screen.fill((0, 0, 0))
     winner_text = ""
-    if player1_lives <= 0:
+    if player1_health <= 0:
         winner_text = "Player 2 Wins!"
-    elif player2_lives <= 0:
+    elif player2_health <= 0:
         winner_text = "Player 1 Wins!"
 
     draw_text(winner_text, WIDTH // 2 - 100, HEIGHT // 2 - 20, WHITE)
@@ -292,8 +366,8 @@ while True:
     keys = pygame.key.get_pressed()
     if keys[pygame.K_c]:
         # Reset the game
-        player1_lives = 3
-        player2_lives = 3
+        player1_health = PLAYER_MAX_HEALTH
+        player2_health = PLAYER_MAX_HEALTH
         player1_score = 0
         player2_score = 0
         reset_player(player1)
@@ -304,6 +378,7 @@ while True:
         game_over = False
         last_enemy_spawn_time = 0
         last_powerup_spawn_time = 0
+        health_regeneration_timer = pygame.time.get_ticks()
 
     if keys[pygame.K_q]:
         pygame.quit()
