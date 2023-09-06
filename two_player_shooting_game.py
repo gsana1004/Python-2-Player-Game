@@ -42,7 +42,7 @@ pygame.display.set_caption("Two-Player Shooting Game")
 font = pygame.font.Font(None, int(WIDTH * 0.02))
 
 # Player 1
-player1_img = pygame.image.load("spaceship-1.png")
+player1_img = pygame.image.load("assets/spaceship-1.png")
 player1_img = pygame.transform.scale(player1_img, (PLAYER_SIZE, PLAYER_SIZE))
 player1 = player1_img.get_rect()
 player1.x = WIDTH // 4
@@ -62,7 +62,7 @@ player1_last_shot_time = 0
 fire_rate_delay = 500
 
 # Player 2
-player2_img = pygame.image.load("spaceship-2.png")
+player2_img = pygame.image.load("assets/spaceship-2.png")
 player2_img = pygame.transform.scale(player2_img, (PLAYER_SIZE, PLAYER_SIZE))
 player2 = player2_img.get_rect()
 player2.x = 3 * WIDTH // 4
@@ -81,7 +81,7 @@ player2_can_shoot = True  # Indicates if player 2 can shoot
 player2_last_shot_time = 0
 
 # Enemies
-enemy_img = pygame.image.load("enemy-ship.png")
+enemy_img = pygame.image.load("assets/enemy-ship.png")
 enemy_img = pygame.transform.scale(enemy_img, (ENEMY_SIZE, ENEMY_SIZE))
 enemies = []
 
@@ -93,6 +93,7 @@ level = 1
 last_enemy_spawn_time = 0
 last_powerup_spawn_time = 0
 game_over = False
+winner = None
 
 # Time tracking for health regeneration
 health_regeneration_timer = pygame.time.get_ticks()
@@ -115,6 +116,13 @@ def reset_player(player):
     player_fire_rate = 1
     player_shielded = False
     player_shield_end_time = 0
+
+def draw_health_bar(player_health, player_x, player_y):
+    bar_width = int(PLAYER_SIZE * 1.5)
+    health_bar_length = int(bar_width * (player_health / PLAYER_MAX_HEALTH))
+    health_bar_rect = pygame.Rect(player_x, player_y - 10, health_bar_length, 5)
+    pygame.draw.rect(screen, GREEN, health_bar_rect)
+    pygame.draw.rect(screen, WHITE, (player_x, player_y - 10, bar_width, 5), 1)
 
 # Game loop
 clock = pygame.time.Clock()
@@ -210,6 +218,7 @@ while not game_over:
         enemy.y = enemy_y
         enemies.append(enemy)
         last_enemy_spawn_time = current_time
+
     # Update enemy positions
     for enemy in enemies:
         enemy.y += ENEMY_SPEED
@@ -262,16 +271,18 @@ while not game_over:
             if not player1_shielded:
                 player1_health -= 10  # Deduct 10% health
                 if player1_health <= 0:
-                    reset_player(player1)
-                    player1_health = PLAYER_MAX_HEALTH  # Reset health when it reaches 0
+                    winner = "Player 2 Wins!"
+                    game_over = True
+                    break
             enemies.remove(enemy)
 
         if player2.colliderect(enemy):
             if not player2_shielded:
                 player2_health -= 10  # Deduct 10% health
                 if player2_health <= 0:
-                    reset_player(player2)
-                    player2_health = PLAYER_MAX_HEALTH  # Reset health when it reaches 0
+                    winner = "Player 1 Wins!"
+                    game_over = True
+                    break
             enemies.remove(enemy)
 
     # Check for collisions between players and power-ups
@@ -330,11 +341,7 @@ while not game_over:
     for (powerup, _) in powerups:
         pygame.draw.rect(screen, GREEN, powerup)
 
-    draw_text(f"Player 1 Health: {int(player1_health)}%", 10, 50, WHITE)
-    draw_text(f"Player 1 Score: {player1_score}", 10, 90, WHITE)
-    draw_text(f"Player 2 Health: {int(player2_health)}%", WIDTH - 200, 50, WHITE)
-    draw_text(f"Player 2 Score: {player2_score}", WIDTH - 200, 90, WHITE)
-
+ 
     # Display overheating warning for player 1
     if not player1_can_shoot:
         if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
@@ -345,50 +352,81 @@ while not game_over:
         if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
             draw_text("OVERHEATING", WIDTH - 200, 120, RED)
 
+    health_bar_offset = 25
+
+    # Draw health bars for both players
+    draw_health_bar(player1_health, player1.x + (PLAYER_SIZE // 2) - int(PLAYER_SIZE * 0.75),
+                    player1.y + PLAYER_SIZE + health_bar_offset)
+    draw_health_bar(player2_health, player2.x + (PLAYER_SIZE // 2) - int(PLAYER_SIZE * 0.75),
+                    player2.y + PLAYER_SIZE + health_bar_offset)
+
     pygame.display.flip()
 
     clock.tick(60)
 
-# Game over screen
-while game_over:
+# Display the winner and offer the option to restart or quit the game
+play_again = False
+while True:  # Keep this loop running
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-    screen.fill((0, 0, 0))
-    winner_text = ""
-    if player1_health <= 0:
-        winner_text = "Player 2 Wins!"
-    elif player2_health <= 0:
-        winner_text = "Player 1 Wins!"
+    if game_over:
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_p]:
+            # Reset the game
+            game_over = False
+            winner = None
+            reset_player(player1)
+            reset_player(player2)
+            player1_health = PLAYER_MAX_HEALTH
+            player2_health = PLAYER_MAX_HEALTH
+            player1_score = 0
+            player2_score = 0
+            player1_overheat = 0
+            player2_overheat = 0
+            last_enemy_spawn_time = pygame.time.get_ticks()
+            last_powerup_spawn_time = pygame.time.get_ticks()
+            powerups = []
+            enemies = []
+            health_regeneration_timer = pygame.time.get_ticks()
+            winner = None  # Reset the winner
+        elif keys[pygame.K_q]:
+            pygame.quit()
+            sys.exit()
 
-    draw_text(winner_text, WIDTH // 2 - 100, HEIGHT // 2 - 20, WHITE)
-    draw_text(f"Player 1 Score: {player1_score}", WIDTH // 2 - 100, HEIGHT // 2 + 20, WHITE)
-    draw_text(f"Player 2 Score: {player2_score}", WIDTH // 2 - 100, HEIGHT // 2 + 60, WHITE)
-    draw_text("Press 'C' to Continue or 'Q' to Quit", WIDTH // 2 - 200, HEIGHT // 2 + 120, WHITE)
-    pygame.display.flip()
+    if winner:
+        screen.fill((0, 0, 0))
+        draw_text(winner, WIDTH // 2 - 100, HEIGHT // 2 - 20, WHITE)
+        draw_text("Press 'P' to Play Again or 'Q' to Quit", WIDTH // 2 - 200, HEIGHT // 2 + 40, WHITE)
+        pygame.display.flip()
+    else:
+        screen.fill((0, 0, 0))
+        draw_text(f"Player 1 Health: {int(player1_health)}%", 10, 50, WHITE)
+        draw_text(f"Player 1 Score: {player1_score}", 10, 90, WHITE)
+        draw_text(f"Player 2 Health: {int(player2_health)}%", WIDTH - 200, 50, WHITE)
+        draw_text(f"Player 2 Score: {player2_score}", WIDTH - 200, 90, WHITE)
 
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_c]:
-        # Reset the game
-        player1_health = PLAYER_MAX_HEALTH
-        player2_health = PLAYER_MAX_HEALTH
-        player1_score = 0
-        player2_score = 0
-        reset_player(player1)
-        reset_player(player2)
-        enemies.clear()
-        powerups.clear()
-        level = 1
-        game_over = False
-        last_enemy_spawn_time = 0
-        last_powerup_spawn_time = 0
-        health_regeneration_timer = pygame.time.get_ticks()
+        # Display overheating warning for player 1
+        if not player1_can_shoot:
+            if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
+                draw_text("OVERHEATING", 10, 120, RED)
 
-    if keys[pygame.K_q]:
-        pygame.quit()
-        sys.exit()
+        # Display overheating warning for player 2
+        if not player2_can_shoot:
+            if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
+                draw_text("OVERHEATING", WIDTH - 200, 120, RED)
+        health_bar_offset = 25
 
+        # Draw health bars for both players
+        draw_health_bar(player1_health, player1.x + (PLAYER_SIZE // 2) - int(PLAYER_SIZE * 0.75),
+                        player1.y + PLAYER_SIZE + health_bar_offset)
+        draw_health_bar(player2_health, player2.x + (PLAYER_SIZE // 2) - int(PLAYER_SIZE * 0.75),
+                        player2.y + PLAYER_SIZE + health_bar_offset)
+        pygame.display.flip()
+
+    clock.tick(60)
+    
 pygame.quit()
 sys.exit()
