@@ -6,18 +6,20 @@ import random
 pygame.init()
 
 # Constants
-WIDTH, HEIGHT = 1790, 1100
-PLAYER_SIZE = 50
-BULLET_SIZE = 10
-ENEMY_SIZE = 30
-POWERUP_SIZE = 20
+
+info_object = pygame.display.Info()
+WIDTH, HEIGHT = int(info_object.current_w * 0.98), int(info_object.current_h * 0.8)
+PLAYER_SIZE = int(WIDTH * 0.03)
+BULLET_SIZE = int(WIDTH * 0.006)
+ENEMY_SIZE = int(WIDTH * 0.02)
+POWERUP_SIZE = int(WIDTH * 0.01)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
-PLAYER_SPEED = 5
-BULLET_SPEED = 5
-ENEMY_SPEED = 3
+PLAYER_SPEED = int(WIDTH * 0.0048)
+BULLET_SPEED = int(WIDTH * 0.0028)
+ENEMY_SPEED = int(WIDTH * 0.0017)
 ENEMY_SPAWN_INTERVAL = 1000
 POWERUP_SPAWN_INTERVAL = 5000
 POWERUP_FIRE_RATE = "fire_rate"
@@ -37,10 +39,10 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Two-Player Shooting Game")
 
 # Fonts
-font = pygame.font.Font(None, 36)
+font = pygame.font.Font(None, int(WIDTH * 0.02))
 
 # Player 1
-player1_img = pygame.image.load("/Users/gabrielsanandaji/pythongame/png-transparent-spaceshipone-spaceshiptwo-sprite-spacecraft-two-dimensional-space-spaceship-game-fictional-character-space.png")
+player1_img = pygame.image.load("spaceship-1.png")
 player1_img = pygame.transform.scale(player1_img, (PLAYER_SIZE, PLAYER_SIZE))
 player1 = player1_img.get_rect()
 player1.x = WIDTH // 4
@@ -60,7 +62,7 @@ player1_last_shot_time = 0
 fire_rate_delay = 500
 
 # Player 2
-player2_img = pygame.image.load("/Users/gabrielsanandaji/pythongame/png-clipart-pokemon-character-illustration-asteroids-outpost-defender-miner-cube-pro-sprite-video-game-space-craft-game-symmetry.png")
+player2_img = pygame.image.load("spaceship-2.png")
 player2_img = pygame.transform.scale(player2_img, (PLAYER_SIZE, PLAYER_SIZE))
 player2 = player2_img.get_rect()
 player2.x = 3 * WIDTH // 4
@@ -79,7 +81,7 @@ player2_can_shoot = True  # Indicates if player 2 can shoot
 player2_last_shot_time = 0
 
 # Enemies
-enemy_img = pygame.image.load("/Users/gabrielsanandaji/pythongame/png-transparent-digital-painting-decapoda-bird-exotic-pet-enemy-spaceship-spacecraft-pet-video-game.png")
+enemy_img = pygame.image.load("enemy-ship.png")
 enemy_img = pygame.transform.scale(enemy_img, (ENEMY_SIZE, ENEMY_SIZE))
 enemies = []
 
@@ -208,6 +210,10 @@ while not game_over:
         enemy.y = enemy_y
         enemies.append(enemy)
         last_enemy_spawn_time = current_time
+    # Update enemy positions
+    for enemy in enemies:
+        enemy.y += ENEMY_SPEED
+
     # Cooldown for player 1
     current_time = pygame.time.get_ticks()
     if player1_overheat >= OVERHEAT_MAX:
