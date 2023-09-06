@@ -81,7 +81,7 @@ player2_can_shoot = True  # Indicates if player 2 can shoot
 player2_last_shot_time = 0
 
 # Enemies
-enemy_img = pygame.image.load("assets/enemy-ship.png")
+enemy_img = pygame.image.load("assets/enemy-ship.jpg")
 enemy_img = pygame.transform.scale(enemy_img, (ENEMY_SIZE, ENEMY_SIZE))
 enemies = []
 
@@ -97,6 +97,9 @@ winner = None
 
 # Time tracking for health regeneration
 health_regeneration_timer = pygame.time.get_ticks()
+
+# Initialize enemy rotation angle
+enemy_rotation_angle = 0  # Initial rotation angle for enemy ships
 
 # Function to draw text on the screen
 def draw_text(text, x, y, color):
@@ -223,6 +226,9 @@ while not game_over:
     for enemy in enemies:
         enemy.y += ENEMY_SPEED
 
+    # Rotate enemy images
+    enemy_rotation_angle += 1  # Adjust the speed of rotation as needed
+
     # Cooldown for player 1
     current_time = pygame.time.get_ticks()
     if player1_overheat >= OVERHEAT_MAX:
@@ -336,12 +342,13 @@ while not game_over:
         pygame.draw.rect(screen, BLUE, bullet)
 
     for enemy in enemies:
-        screen.blit(enemy_img, enemy)
+        # Rotate and draw enemy images
+        rotated_enemy = pygame.transform.rotate(enemy_img, enemy_rotation_angle)
+        screen.blit(rotated_enemy, enemy)
 
     for (powerup, _) in powerups:
         pygame.draw.rect(screen, GREEN, powerup)
 
- 
     # Display overheating warning for player 1
     if not player1_can_shoot:
         if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
@@ -417,16 +424,7 @@ while True:  # Keep this loop running
         if not player2_can_shoot:
             if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
                 draw_text("OVERHEATING", WIDTH - 200, 120, RED)
-        health_bar_offset = 25
 
-        # Draw health bars for both players
-        draw_health_bar(player1_health, player1.x + (PLAYER_SIZE // 2) - int(PLAYER_SIZE * 0.75),
-                        player1.y + PLAYER_SIZE + health_bar_offset)
-        draw_health_bar(player2_health, player2.x + (PLAYER_SIZE // 2) - int(PLAYER_SIZE * 0.75),
-                        player2.y + PLAYER_SIZE + health_bar_offset)
         pygame.display.flip()
 
     clock.tick(60)
-    
-pygame.quit()
-sys.exit()
