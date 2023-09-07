@@ -60,11 +60,11 @@ if pygame.joystick.get_count() > 0:
     joystick.init()
 
 # Load images
-player1_img = pygame.image.load("assets/spaceship-1.png").convert_alpha()
+player1_img = pygame.image.load("/Users/gabrielsanandaji/Development/Code/phase-5/assets/spaceship-1.png").convert_alpha()
 player1_img = pygame.transform.scale(player1_img, (PLAYER_SIZE, PLAYER_SIZE))
-player2_img = pygame.image.load("assets/spaceship-2.png")
+player2_img = pygame.image.load("/Users/gabrielsanandaji/Development/Code/phase-5/assets/spaceship-2.png")
 player2_img = pygame.transform.scale(player2_img, (PLAYER_SIZE, PLAYER_SIZE))
-enemy_img = pygame.image.load("assets/enemy-ship.png")
+enemy_img = pygame.image.load("/Users/gabrielsanandaji/Development/Code/phase-5/assets/enemy-ship.png")
 enemy_img = pygame.transform.scale(enemy_img, (ENEMY_SIZE, ENEMY_SIZE))
 
 
@@ -73,7 +73,7 @@ font = pygame.font.Font(None, int(WIDTH * 0.02))
 
 
 # Player 1
-player1_img = pygame.image.load("assets/spaceship-1.png")
+player1_img = pygame.image.load("/Users/gabrielsanandaji/Development/Code/phase-5/assets/spaceship-1.png")
 player1_img = pygame.transform.scale(player1_img, (PLAYER_SIZE, PLAYER_SIZE))
 player1 = player1_img.get_rect()
 player1.x = WIDTH // 4
@@ -94,7 +94,7 @@ fire_rate_delay = 500
 player1_rotation = 0  # Initial rotation angle for player 1
 player1_img_rotated = player1_img  # Initialize the rotated image
 # Player 2
-player2_img = pygame.image.load("assets/spaceship-2.png")
+player2_img = pygame.image.load("/Users/gabrielsanandaji/Development/Code/phase-5/assets/spaceship-2.png")
 player2_img = pygame.transform.scale(player2_img, (PLAYER_SIZE, PLAYER_SIZE))
 player2 = player2_img.get_rect()
 player2.x = 3 * WIDTH // 4
@@ -114,7 +114,7 @@ player2_last_shot_time = 0
 player2_rotation = 0  # Initial rotation angle for player 2
 player2_img_rotated = player2_img  # Initialize the rotated image
 # Enemies
-enemy_img = pygame.image.load("assets/enemy-ship.png")
+enemy_img = pygame.image.load("/Users/gabrielsanandaji/Development/Code/phase-5/assets/enemy-ship.png")
 enemy_img = pygame.transform.scale(enemy_img, (ENEMY_SIZE, ENEMY_SIZE))
 enemies = []
 
