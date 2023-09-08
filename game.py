@@ -597,35 +597,55 @@ def play():
         video_capture.release()
         cv2.destroyAllWindows()
 
+def render_multiline_text(surface, text, font, color, center_pos):
+    lines = text.strip().split('\n')
+    rendered_lines = [font.render(line.strip(), True, color) for line in lines]
+    total_height = sum([line.get_height() for line in rendered_lines])
+    current_y = center_pos[1] - total_height // 2
+
+    for line in rendered_lines:
+        line_rect = line.get_rect(center=(center_pos[0], current_y))
+        surface.blit(line, line_rect)
+        current_y += line.get_height()
+
 def instructions():
     while True:
         INSTRUCTIONS_MOUSE_POS = pygame.mouse.get_pos()
 
         SCREEN.fill('white')
+
+        # Narrower text
+        instructions_text = """
+        WELCOME TO SPACE WARS: METEOR MAYHEM EDITION 
+
+        This is a two player game made by and for Flatiron students.
+
+        In this game we have 2 characters battling it out in the depths of the unknown
+        against the harsh conditions of space. 
         
-        INSTRUCTIONS_TEXT = get_font(5).render("""
-            This is a two player game made by and for Flatiron students.
+        We have two players:
 
-            In this game we have 2 characters battling it out in the depths of the unknown against the harsh conditions of space.  we have two players:
+        Player 1 controls:
+        - Left arrow to move left
+        - Right arrow to move right
+        - Return key to shoot
 
-            player 1 controls:
-            - left arrow to move left
-            - right arrow to move right
-            - return key to shoot
+        Player 2 controls:
+        - 'A' key to move left
+        - 'C' key to move right
+        - Space bar to shoot
 
-            player 2 controls:
-            - 'A' key to move left
-            - 'C' key to move right
-            - space bar to shoot
+        You must dodge or shoot the asteroids to keep yourself alive. 
+        This is a game of resilience and focus.
 
-            You must dodge or shoot the asteroids to keep yourself alive. This is a game of resilience and focus.
-            Good luck, Captain!
-            """, True, "Black")
-        INSTRUCTIONS_RECT = INSTRUCTIONS_TEXT.get_rect(center=(640, 260))
-        SCREEN.blit(INSTRUCTIONS_TEXT, INSTRUCTIONS_RECT)
+        Good luck, Captain!
+        """
 
-        INSTRUCTIONS_BACK = Button(image=None, pos=(640, 660), 
-                            text_input="BACK TO MENU", font=get_font(55), base_color="Black", hovering_color="Green")
+        render_multiline_text(SCREEN, instructions_text, get_font(15), "Black", (640, 360))
+
+        INSTRUCTIONS_BACK = Button(image=None, pos=(640, 660),
+                                    text_input="BACK TO MENU", font=get_font(55), base_color="Black",
+                                    hovering_color="Green")
 
         INSTRUCTIONS_BACK.changeColor(INSTRUCTIONS_MOUSE_POS)
         INSTRUCTIONS_BACK.update(SCREEN)
