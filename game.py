@@ -78,9 +78,9 @@ def play():
 
 
     # Overheating Bar Constants
+    OVERHEAT_COOLDOWN = 5000
     OVERHEAT_MAX = 200
-    OVERHEAT_COOLDOWN = 3000
-    OVERHEAT_DECREMENT = 10
+    OVERHEAT_DECREMENT = OVERHEAT_MAX / (OVERHEAT_COOLDOWN / 1000) 
 
     # Player Health Constants
     PLAYER_MAX_HEALTH = 100
@@ -130,6 +130,7 @@ def play():
     player1_health = PLAYER_MAX_HEALTH
     player1_score = 0
     player1_overheat = 0
+    player1_overheating = False
     player1_overheat_cooldown = 0
     player1_can_shoot = True  # Indicates if player 1 can shoot
     player1_last_shot_time = 0
@@ -151,6 +152,7 @@ def play():
     player2_health = PLAYER_MAX_HEALTH
     player2_score = 0
     player2_overheat = 0
+    player2_overheating = False
     player2_overheat_cooldown = 0
     player2_can_shoot = True  # Indicates if player 2 can shoot
     player2_last_shot_time = 0
@@ -360,32 +362,59 @@ def play():
         # Rotate enemy images
         enemy_rotation_angle += 1  # Adjust the speed of rotation as needed
 
-        # Cooldown for player 1
+        # During game loop:
+
         current_time = pygame.time.get_ticks()
-        if player1_overheat >= OVERHEAT_MAX:
+
+        # Cooldown logic for player 1
+        if player1_overheat >= OVERHEAT_MAX and not player1_overheating:
+            player1_overheating = True
             player1_can_shoot = False
+            player1_overheat_cooldown = current_time + OVERHEAT_COOLDOWN  # Start the cooldown timer
+
+        if player1_overheating:
             if current_time >= player1_overheat_cooldown:
+                player1_overheating = False
                 player1_can_shoot = True
-                player1_overheat_cooldown = current_time + OVERHEAT_COOLDOWN  # Set cooldown end time
-        else:
-            player1_can_shoot = True
+                player1_overheat = 0  # Reset the overheat value
+            else:
+                player1_overheat -= OVERHEAT_DECREMENT  # Gradually decrease overheat value
+                if player1_overheat < 0:
+                    player1_overheat = 0
 
-        # Cooldown for player 2
-        if player2_overheat >= OVERHEAT_MAX:
+        # Cooldown logic for player 2
+        if player2_overheat >= OVERHEAT_MAX and not player2_overheating:
+            player2_overheating = True
             player2_can_shoot = False
-            if current_time >= player2_overheat_cooldown:
-                player2_can_shoot = True
-                player2_overheat_cooldown = current_time + OVERHEAT_COOLDOWN  # Set cooldown end time
-        else:
-            player2_can_shoot = True
+            player2_overheat_cooldown = current_time + OVERHEAT_COOLDOWN  # Start the cooldown timer
 
-        # Decrease overheating for player 1
+        if player2_overheating:
+            if current_time >= player2_overheat_cooldown:
+                player2_overheating = False
+                player2_can_shoot = True
+                player2_overheat = 0  # Reset the overheat value
+            else:
+                player2_overheat -= OVERHEAT_DECREMENT  # Gradually decrease overheat value
+                if player2_overheat < 0:
+                    player2_overheat = 0
+
+
+
+        # Gradual decrease of overheating for player 1
         if not player1_can_shoot and player1_overheat > 0:
             player1_overheat -= OVERHEAT_DECREMENT
 
-        # Decrease overheating for player 2
+        # Gradual decrease of overheating for player 2
         if not player2_can_shoot and player2_overheat > 0:
             player2_overheat -= OVERHEAT_DECREMENT
+
+        # The blinking text logic remains the same as before
+
+            
+            # Make the "OVERHEATING" text blink for the entire cooldown duration
+            if current_time % (OVERHEAT_COOLDOWN // 2) < OVERHEAT_COOLDOWN // 4:  # Adjust this line
+                draw_text("OVERHEATING", WIDTH - 200, 120, RED)
+
 
         # Check for collisions between bullets and enemies
         for bullet in player1_bullets:
@@ -554,6 +583,8 @@ def play():
                 player2_score = 0
                 player1_overheat = 0
                 player2_overheat = 0
+                player1_overheating = False
+                player2_overheating = False
                 last_enemy_spawn_time = pygame.time.get_ticks()
                 last_powerup_spawn_time = pygame.time.get_ticks()
                 powerups = []
@@ -578,12 +609,12 @@ def play():
 
             # Display overheating warning for player 1
             if not player1_can_shoot:
-                if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
+                if current_time % 5000 < 3000:  # Blink effect every 500 milliseconds
                     draw_text("OVERHEATING", 10, 120, RED)
 
             # Display overheating warning for player 2
             if not player2_can_shoot:
-                if current_time % 1000 < 500:  # Blink effect every 500 milliseconds
+                if current_time % 5000 < 3000:  # Blink effect every 500 milliseconds
                     draw_text("OVERHEATING", WIDTH - 200, 120, RED)
 
             pygame.display.flip()
